@@ -1,0 +1,53 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+dist/
+.next/
+coverage/
+
+# ML — weights and local experiment output stay out of git
+data/raw/
+checkpoints/
+wandb/
+mlruns/
+*.ckpt
+*.pt
+
+# Agent artifacts
+artifacts/
+.audit/
+*.local.md
+CLAUDE.local.md
+
+# Claude Code skill links are created locally by scripts/link-skills.sh.
+# Cursor also indexes .claude/skills, so committed links would list each skill twice.
+# See docs/DECISIONS.md ADR-0000.
+.claude/skills/
+
+# Logs
+*.log
+logs/

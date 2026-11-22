@@ -1,0 +1,7 @@
+---
+description: Core project rules pointer and first-run check
+alwaysApply: true
+---
+Follow `AGENTS.md` at the repo root; it is the single source of truth for this project.
+If `docs/PRD.md` contains `status: TEMPLATE`, run the `kickoff` skill before anything else.
+Do not add more rules here; add them to AGENTS.md (or better, encode them as a check — see the `correct` skill).

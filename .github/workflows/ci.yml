@@ -1,0 +1,90 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: clean-slate-ci
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up stack runtime
+        run: |
+          # {{CI_SETUP_STEPS}}
+          # Kickoff replaces the placeholder line with real setup and deletes the samples.
+          # Python + uv:
+          #   curl -LsSf https://astral.sh/uv/install.sh | sh
+          # Node + pnpm:
+          #   corepack enable
+          #   corepack prepare pnpm@10 --activate
+          echo "Template: no stack runtime until kickoff."
+
+      - name: Gate
+        run: |
+          set -eu
+          set +e
+          output=$(scripts/check.sh 2>&1)
+          code=$?
+          set -e
+          printf '%s\n' "$output"
+          if [ "$code" -eq 0 ]; then
+            exit 0
+          fi
+          # TEMPLATE BRANCH. Kickoff deletes this success path and runs scripts/check.sh directly.
+          if [ "$code" -eq 1 ] && printf '%s\n' "$output" | grep -F -q "Not configured yet: run the kickoff skill"; then
+            echo "Template gate is unconfigured, as required."
+            exit 0
+          fi
+          echo "scripts/check.sh failed with exit ${code}" >&2
+          exit "$code"
+
+      - name: Shellcheck and skill links
+        run: |
+          set -eu
+          if ! command -v shellcheck >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq shellcheck
+          fi
+          shellcheck scripts/check.sh scripts/link-skills.sh
+          scripts/link-skills.sh
+          fail=0
+          for skill in .agents/skills/*; do
+            name=$(basename "$skill")
+            if [ ! -e ".claude/skills/${name}/SKILL.md" ]; then
+              echo "missing link for ${name}" >&2
+              fail=1
+            fi
+          done
+          test "$fail" -eq 0
+
+  gitleaks:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    # The official action lists pull-request commits. contents: read is not enough for that call.
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
+          GITLEAKS_ENABLE_SUMMARY: "false"
